@@ -51,3 +51,8 @@ stepFunctions:
               Fn::GetAtt: [double, Arn]
             InputPath: $.n
             End: true
+            Retry:
+              - ErrorEquals: [NumberIsTooBigError] 
+                MaxAttempts: 0
+              - ErrorEquals: [States.ALL] 
+                MaxAttempts: 3
