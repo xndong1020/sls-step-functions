@@ -22,3 +22,7 @@ export const double = async (n: number): Promise<number> => {
   if (n > 50) throw new NumberIsTooBigError(n)
   return n * 2
 };
+
+export const doubleBigNumber = async (n: number): Promise<number> => {
+  return n * 10
+};

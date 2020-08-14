@@ -31,6 +31,9 @@ functions:
   double:
     handler: handler.double
 
+  doubleBigNumber:
+    handler: handler.doubleBigNumber
+
 stepFunctions:
   stateMachines:
     mathStateMachine:
@@ -44,7 +47,14 @@ stepFunctions:
             Resource:
               Fn::GetAtt: [add, Arn]
             ResultPath: $.n
-            Next: Double
+            Next: IsBigNumber
+          IsBigNumber:
+            Type: Choice
+            Choices:
+              - Variable: $.n
+                NumericGreaterThan: 50
+                Next: DoubleBigNumber
+            Default: Double
           Double:
             Type: Task
             Resource:
@@ -59,6 +69,12 @@ stepFunctions:
             Catch:
               - ErrorEquals: [NumberIsTooBigError] 
                 Next: DefaultResponse
+          DoubleBigNumber:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [doubleBigNumber, Arn]
+            InputPath: $.n
+            End: true
           DefaultResponse:
             Type: Pass
             Result: An error has occurred
