@@ -17,29 +17,37 @@ plugins:
 provider:
   name: aws
   runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-2'}
   apiGateway:
     minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
   environment:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 functions:
-  hello:
-    handler: handler.hello
-    events:
-      - http:
-          method: get
-          path: hello
+  add:
+    handler: handler.add
+    
+  double:
+    handler: handler.double
 
 stepFunctions:
   stateMachines:
-    myStateMachine:
-      name: myStateMachine
+    mathStateMachine:
+      name: mathStateMachine
       definition:
-        Comment: my first state machine
-        StartAt: SayHello
+        Comment: my math state machine
+        StartAt: Add
         States:
-          SayHello:
+          Add:
             Type: Task
             Resource:
-              Fn::GetAtt: [hello, Arn]
+              Fn::GetAtt: [add, Arn]
+            ResultPath: $.n
+            Next: Double
+          Double:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [double, Arn]
+            InputPath: $.n
             End: true
