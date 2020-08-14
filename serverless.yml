@@ -39,7 +39,7 @@ stepFunctions:
         StartAt: SayHello
         States:
           SayHello:
-            Type:Task
+            Type: Task
             Resource:
               Fn::GetAtt: [hello, Arn]
             End: true

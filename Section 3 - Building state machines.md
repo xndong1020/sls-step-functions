@@ -4,7 +4,7 @@
 
 ```
 sls create -t aws-nodejs-typescript
-npm init -y
+npm i
 ```
 
 2. install `serverless-step-functions` plugin
@@ -58,26 +58,28 @@ functions:
 stepFunctions:
   stateMachines:
     myStateMachine:
-      name: myStateMachine
+      name: myStateMachine # name of the state machine
       definition:
         Comment: my first state machine
         StartAt: SayHello
         States:
           SayHello:
-            Type:Task
+            Type: Task
             Resource:
               Fn::GetAtt: [hello, Arn]
             End: true
-
 ```
 
 And handler.ts
 
 ```ts
-import { APIGatewayProxyHandler } from "aws-lambda";
 import "source-map-support/register";
 
-export const hello: APIGatewayProxyHandler = async ({ name }) => {
+interface Data {
+  name: string;
+}
+
+export const hello = async ({ name }: Data) => {
   return {
     statusCode: 200,
     body: JSON.stringify(
