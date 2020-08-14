@@ -1,18 +1,15 @@
 import "source-map-support/register";
 
 interface Data {
-  name: string;
+  x: number;
+  y: number;
+  n: number | null;
 }
 
-export const hello = async ({ name }: Data) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: `Hello ${name}`,
-      },
-      null,
-      2
-    ),
-  };
+export const add = async ({ x, y }: Data): Promise<number> => {
+  return x + y // if we specified ResultPath, then the result will be saved into ResultPath
+};
+
+export const double = async (n: number): Promise<number> => {
+  return n * 2
 };
