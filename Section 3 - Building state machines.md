@@ -295,3 +295,80 @@ execute
 this time we see there is no retry
 
 ![retries](./docs/img/008.png)
+
+
+#### 16. Catch
+We can add catch logic to catch any error from previous States
+
+```ts
+service:
+  name: cmp-guide-step-functions
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-2'}
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+functions:
+  add:
+    handler: handler.add
+    
+  double:
+    handler: handler.double
+
+stepFunctions:
+  stateMachines:
+    mathStateMachine:
+      name: mathStateMachine
+      definition:
+        Comment: my math state machine
+        StartAt: Add
+        States:
+          Add:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [add, Arn]
+            ResultPath: $.n
+            Next: Double
+          Double:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [double, Arn]
+            InputPath: $.n
+            End: true
+            Retry:
+              - ErrorEquals: [NumberIsTooBigError] 
+                MaxAttempts: 0
+              - ErrorEquals: [States.ALL] 
+                MaxAttempts: 3
+            Catch:
+              - ErrorEquals: [NumberIsTooBigError] 
+                Next: DefaultResponse
+          DefaultResponse:
+            Type: Pass
+            Result: An error has occurred
+            End: true
+
+```
+
+In above code, if there is any `NumberIsTooBigError`, then we have a logic to return a default error message.
+
+![catch](./docs/img/009.png)
