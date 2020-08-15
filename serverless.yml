@@ -27,7 +27,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -40,55 +40,22 @@ stepFunctions:
       name: mathStateMachine
       definition:
         Comment: my math state machine
-        StartAt: DoAllTasks
+        StartAt: myTaskMap
         States:
-          DoAllTasks:
-            Type: Parallel
-            Branches:
-              - StartAt: Add
-                States:
-                  Add:
-                    Type: Task
-                    Resource: 
-                      Fn::GetAtt: [add, Arn]
-                    Next: Double
-                  Double:
-                    Type: Task
-                    Resource: 
-                      Fn::GetAtt: [double, Arn]
-                    End: true
-              - StartAt: PickXFromInput
-                States:
-                  PickXFromInput:
-                    Type: Pass
-                    InputPath: $.x
-                    Next: Double2
-                  Double2:
-                    Type: Task
-                    Resource: 
-                      Fn::GetAtt: [double, Arn]
-                    End: true
+          myTaskMap:
+            Type: Map
+            Iterator:
               - StartAt: Wait5Seconds
                 States:
-                  Wait5Seconds:
-                    Type: Wait
-                    Seconds: 5
-                    End: true
-              - StartAt: NestedParallel
-                States:
-                  NestedParallel:
-                    Type: Parallel
-                    Branches:
-                      - StartAt: PickYFromInput
-                        States:
-                          PickYFromInput: 
-                            Type: Pass
-                            InputPath: $.y
-                            Next: DoubleBig
-                          DoubleBig:
-                            Type: Task
-                            Resource: 
-                              Fn::GetAtt: [doubleBigNumber, Arn]
-                            End: true
-                    End: true
+                  - StartAt: Wait5Seconds
+                    States:
+                      Wait5Seconds:
+                        Type: Wait
+                        Seconds: 5
+                        Next: Double
+                      Double:
+                        Type: Task
+                        Resource:
+                          Fn::GetAtt: [double, Arn]
+                        End: true
             End: true

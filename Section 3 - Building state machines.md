@@ -95,7 +95,6 @@ export const hello = async ({ name }: Data) => {
 
 ![sayHello](./docs/img/006.png)
 
-
 #### 14. Chaining function calls
 
 ```yml
@@ -128,7 +127,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -152,11 +151,11 @@ stepFunctions:
               Fn::GetAtt: [double, Arn]
             InputPath: $.n
             End: true
-
 ```
 
-Note here, `ResultPath: $.n` and `InputPath: $.n` are all optional. 
-- Without `ResultPath: $.n`, the result of `add` will be saved to root of $, and $.x and $.y will be lost
+Note here, `ResultPath: $.n` and `InputPath: $.n` are all optional.
+
+- Without `ResultPath: $.n`, the result of `add` will be saved to root of $, and $.x and \$.y will be lost
 - `InputPath: $.n` if it is specified, then the input for `double` will be a number, which is 55. If it is NOT specified, then the input will be {"x": 42, "y":13, "n": 55}
 
 handle.ts
@@ -171,13 +170,12 @@ interface Data {
 }
 
 export const add = async ({ x, y }: Data): Promise<number> => {
-  return x + y // if we specified ResultPath, then the result will be saved into ResultPath
+  return x + y; // if we specified ResultPath, then the result will be saved into ResultPath
 };
 
 export const double = async (n: number): Promise<number> => {
-  return n * 2
+  return n * 2;
 };
-
 ```
 
 #### 15. Retry
@@ -195,21 +193,20 @@ interface Data {
 
 class NumberIsTooBigError extends Error {
   constructor(n: number) {
-    super(`${n} is too big`)
-    this.name = 'NumberIsTooBigError'
-    Error.captureStackTrace(this, NumberIsTooBigError)
+    super(`${n} is too big`);
+    this.name = "NumberIsTooBigError";
+    Error.captureStackTrace(this, NumberIsTooBigError);
   }
 }
 
 export const add = async ({ x, y }: Data): Promise<number> => {
-  return x + y // if we specified ResultPath, then the result will be saved into ResultPath
+  return x + y; // if we specified ResultPath, then the result will be saved into ResultPath
 };
 
 export const double = async (n: number): Promise<number> => {
-  if (n > 50) throw new NumberIsTooBigError(n)
-  return n * 2
+  if (n > 50) throw new NumberIsTooBigError(n);
+  return n * 2;
 };
-
 ```
 
 And setup retry logic in serverless.yml
@@ -244,7 +241,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -269,10 +266,10 @@ stepFunctions:
             InputPath: $.n
             End: true
             Retry:
-              - ErrorEquals: [States.ALL] 
+              - ErrorEquals: [States.ALL]
                 MaxAttempts: 3
-
 ```
+
 And you will see there are 4 failed executions. 1 for initial execution + 3 retries
 
 ![retries](./docs/img/007.png)
@@ -280,14 +277,15 @@ And you will see there are 4 failed executions. 1 for initial execution + 3 retr
 We can have different settings for different types of errors. For example the retrier for `NumberIsTooBigError`, we set 0 retry.
 
 ```yml
-            Retry:
-              - ErrorEquals: [NumberIsTooBigError] 
-                MaxAttempts: 0
-              - ErrorEquals: [States.ALL] 
-                MaxAttempts: 3
+Retry:
+  - ErrorEquals: [NumberIsTooBigError]
+    MaxAttempts: 0
+  - ErrorEquals: [States.ALL]
+    MaxAttempts: 3
 ```
 
 execute
+
 ```
  sls invoke stepf --name mathStateMachine --data '{"x":42, "y":13}'
 ```
@@ -296,8 +294,8 @@ this time we see there is no retry
 
 ![retries](./docs/img/008.png)
 
-
 #### 16. Catch
+
 We can add catch logic to catch any error from previous States
 
 ```ts
@@ -330,7 +328,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -355,12 +353,12 @@ stepFunctions:
             InputPath: $.n
             End: true
             Retry:
-              - ErrorEquals: [NumberIsTooBigError] 
+              - ErrorEquals: [NumberIsTooBigError]
                 MaxAttempts: 0
-              - ErrorEquals: [States.ALL] 
+              - ErrorEquals: [States.ALL]
                 MaxAttempts: 3
             Catch:
-              - ErrorEquals: [NumberIsTooBigError] 
+              - ErrorEquals: [NumberIsTooBigError]
                 Next: DefaultResponse
           DefaultResponse:
             Type: Pass
@@ -368,7 +366,6 @@ stepFunctions:
             End: true
 
 ```
-
 
 In above code, if there is any `NumberIsTooBigError`, then we have a logic to return a default error message.
 
@@ -406,7 +403,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -441,12 +438,12 @@ stepFunctions:
             InputPath: $.n
             End: true
             Retry:
-              - ErrorEquals: [NumberIsTooBigError] 
+              - ErrorEquals: [NumberIsTooBigError]
                 MaxAttempts: 0
-              - ErrorEquals: [States.ALL] 
+              - ErrorEquals: [States.ALL]
                 MaxAttempts: 3
             Catch:
-              - ErrorEquals: [NumberIsTooBigError] 
+              - ErrorEquals: [NumberIsTooBigError]
                 Next: DefaultResponse
           DoubleBigNumber:
             Type: Task
@@ -461,8 +458,7 @@ stepFunctions:
 
 ```
 
-In above code, `IsBigNumber` has 1 branch, if $.n > 50, then go to state `DoubleBigNumber`, otherwise, go to Default which is `Double` state
-
+In above code, `IsBigNumber` has 1 branch, if \$.n > 50, then go to state `DoubleBigNumber`, otherwise, go to Default which is `Double` state
 
 handler.ts
 
@@ -477,25 +473,24 @@ interface Data {
 
 class NumberIsTooBigError extends Error {
   constructor(n: number) {
-    super(`${n} is too big`)
-    this.name = 'NumberIsTooBigError'
-    Error.captureStackTrace(this, NumberIsTooBigError)
+    super(`${n} is too big`);
+    this.name = "NumberIsTooBigError";
+    Error.captureStackTrace(this, NumberIsTooBigError);
   }
 }
 
 export const add = async ({ x, y }: Data): Promise<number> => {
-  return x + y // if we specified ResultPath, then the result will be saved into ResultPath
+  return x + y; // if we specified ResultPath, then the result will be saved into ResultPath
 };
 
 export const double = async (n: number): Promise<number> => {
-  if (n > 50) throw new NumberIsTooBigError(n)
-  return n * 2
+  if (n > 50) throw new NumberIsTooBigError(n);
+  return n * 2;
 };
 
 export const doubleBigNumber = async (n: number): Promise<number> => {
-  return n * 10
+  return n * 10;
 };
-
 ```
 
 Test with big result
@@ -514,12 +509,14 @@ sls invoke stepf --name mathStateMachine --data '{"x":42, "y":3}'
 
 ![big result](./docs/img/011.png)
 
-
 #### 18. Parallel tasks
 
-- Parallel tasks will run multiple branches at the same time, based on **same input**. 
+- Parallel tasks will run multiple branches at the same time, based on **same input**.
 - Parallel tasks can be nested inside of other parallel tasks.
-- If one of the branch fail, then the whole parallel taks will fail.
+- **no duplicate** state names in the whole state machine
+- a Parallel state execution completes when all its branches have completed
+- **Outputs** from branches are collected into an **array**, and follows the **same order** as the branches
+- If one of the branch fail, then the whole parallel task will fail, in-progress/waiting states are cancelled.
 
 ```yml
 service:
@@ -551,7 +548,7 @@ provider:
 functions:
   add:
     handler: handler.add
-    
+
   double:
     handler: handler.double
 
@@ -573,12 +570,12 @@ stepFunctions:
                 States:
                   Add:
                     Type: Task
-                    Resource: 
+                    Resource:
                       Fn::GetAtt: [add, Arn]
                     Next: Double
                   Double:
                     Type: Task
-                    Resource: 
+                    Resource:
                       Fn::GetAtt: [double, Arn]
                     End: true
               - StartAt: PickXFromInput
@@ -589,7 +586,7 @@ stepFunctions:
                     Next: Double2
                   Double2:
                     Type: Task
-                    Resource: 
+                    Resource:
                       Fn::GetAtt: [double, Arn]
                     End: true
               - StartAt: Wait5Seconds
@@ -605,13 +602,13 @@ stepFunctions:
                     Branches:
                       - StartAt: PickYFromInput
                         States:
-                          PickYFromInput: 
+                          PickYFromInput:
                             Type: Pass
                             InputPath: $.y
                             Next: DoubleBig
                           DoubleBig:
                             Type: Task
-                            Resource: 
+                            Resource:
                               Fn::GetAtt: [doubleBigNumber, Arn]
                             End: true
                     End: true
@@ -621,3 +618,9 @@ stepFunctions:
 Above template will generate below state machine
 
 ![parallel](./docs/img/012.png)
+
+#### 21. Map
+
+Takes an array of input, and run tasks in parallel. Each item in the input array will be the input for each parallel task.
+
+
