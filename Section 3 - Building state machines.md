@@ -513,3 +513,111 @@ sls invoke stepf --name mathStateMachine --data '{"x":42, "y":3}'
 ```
 
 ![big result](./docs/img/011.png)
+
+
+#### 18. Parallel tasks
+
+- Parallel tasks will run multiple branches at the same time, based on **same input**. 
+- Parallel tasks can be nested inside of other parallel tasks.
+- If one of the branch fail, then the whole parallel taks will fail.
+
+```yml
+service:
+  name: cmp-guide-step-functions
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-2'}
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+functions:
+  add:
+    handler: handler.add
+    
+  double:
+    handler: handler.double
+
+  doubleBigNumber:
+    handler: handler.doubleBigNumber
+
+stepFunctions:
+  stateMachines:
+    mathStateMachine:
+      name: mathStateMachine
+      definition:
+        Comment: my math state machine
+        StartAt: DoAllTasks
+        States:
+          DoAllTasks:
+            Type: Parallel
+            Branches:
+              - StartAt: Add
+                States:
+                  Add:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [add, Arn]
+                    Next: Double
+                  Double:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [double, Arn]
+                    End: true
+              - StartAt: PickXFromInput
+                States:
+                  PickXFromInput:
+                    Type: Pass
+                    InputPath: $.x
+                    Next: Double2
+                  Double2:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [double, Arn]
+                    End: true
+              - StartAt: Wait5Seconds
+                States:
+                  Wait5Seconds:
+                    Type: Wait
+                    Seconds: 5
+                    End: true
+              - StartAt: NestedParallel
+                States:
+                  NestedParallel:
+                    Type: Parallel
+                    Branches:
+                      - StartAt: PickYFromInput
+                        States:
+                          PickYFromInput: 
+                            Type: Pass
+                            InputPath: $.y
+                            Next: DoubleBig
+                          DoubleBig:
+                            Type: Task
+                            Resource: 
+                              Fn::GetAtt: [doubleBigNumber, Arn]
+                            End: true
+                    End: true
+            End: true
+```
+
+Above template will generate below state machine
+
+![parallel](./docs/img/012.png)

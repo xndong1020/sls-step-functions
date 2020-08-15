@@ -40,42 +40,55 @@ stepFunctions:
       name: mathStateMachine
       definition:
         Comment: my math state machine
-        StartAt: Add
+        StartAt: DoAllTasks
         States:
-          Add:
-            Type: Task
-            Resource:
-              Fn::GetAtt: [add, Arn]
-            ResultPath: $.n
-            Next: IsBigNumber
-          IsBigNumber:
-            Type: Choice
-            Choices:
-              - Variable: $.n
-                NumericGreaterThan: 50
-                Next: DoubleBigNumber
-            Default: Double
-          Double:
-            Type: Task
-            Resource:
-              Fn::GetAtt: [double, Arn]
-            InputPath: $.n
-            End: true
-            Retry:
-              - ErrorEquals: [NumberIsTooBigError] 
-                MaxAttempts: 0
-              - ErrorEquals: [States.ALL] 
-                MaxAttempts: 3
-            Catch:
-              - ErrorEquals: [NumberIsTooBigError] 
-                Next: DefaultResponse
-          DoubleBigNumber:
-            Type: Task
-            Resource:
-              Fn::GetAtt: [doubleBigNumber, Arn]
-            InputPath: $.n
-            End: true
-          DefaultResponse:
-            Type: Pass
-            Result: An error has occurred
+          DoAllTasks:
+            Type: Parallel
+            Branches:
+              - StartAt: Add
+                States:
+                  Add:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [add, Arn]
+                    Next: Double
+                  Double:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [double, Arn]
+                    End: true
+              - StartAt: PickXFromInput
+                States:
+                  PickXFromInput:
+                    Type: Pass
+                    InputPath: $.x
+                    Next: Double2
+                  Double2:
+                    Type: Task
+                    Resource: 
+                      Fn::GetAtt: [double, Arn]
+                    End: true
+              - StartAt: Wait5Seconds
+                States:
+                  Wait5Seconds:
+                    Type: Wait
+                    Seconds: 5
+                    End: true
+              - StartAt: NestedParallel
+                States:
+                  NestedParallel:
+                    Type: Parallel
+                    Branches:
+                      - StartAt: PickYFromInput
+                        States:
+                          PickYFromInput: 
+                            Type: Pass
+                            InputPath: $.y
+                            Next: DoubleBig
+                          DoubleBig:
+                            Type: Task
+                            Resource: 
+                              Fn::GetAtt: [doubleBigNumber, Arn]
+                            End: true
+                    End: true
             End: true
