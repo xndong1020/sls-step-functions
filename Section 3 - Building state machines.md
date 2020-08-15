@@ -624,3 +624,202 @@ Above template will generate below state machine
 Takes an array of input, and run tasks in parallel. Each item in the input array will be the input for each parallel task.
 
 
+```yml
+service:
+  name: cmp-guide-step-functions
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-2'}
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+functions:
+  add:
+    handler: handler.add
+
+  double:
+    handler: handler.double
+
+  doubleBigNumber:
+    handler: handler.doubleBigNumber
+
+stepFunctions:
+  stateMachines:
+    mathStateMachine:
+      name: mathStateMachine
+      definition:
+        Comment: my math state machine
+        StartAt: myTaskMap
+        States:
+          myTaskMap:
+            Type: Map
+            Iterator:
+              StartAt: Wait5Seconds
+              States:
+                Wait5Seconds:
+                  Type: Wait
+                  Seconds: 5
+                  Next: PickN
+                PickN:
+                  Type: Pass
+                  InputPath: $.n
+                  Next: Double
+                Double:
+                  Type: Task
+                  Resource:
+                    Fn::GetAtt: [double, Arn]
+                  End: true
+            End: true
+
+```
+
+to invoke
+
+```
+ sls invoke stepf --name mathStateMachine --data '[{"n":2},{"n":3},{"n":4},{"n":5}]'
+```
+
+Output
+
+```js
+{
+  executionArn: 'arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:f8007c26-3260-4551-8678-d8a0480b5a1d',
+  stateMachineArn: 'arn:aws:states:ap-southeast-2:476287388771:stateMachine:mathStateMachine',
+  name: 'f8007c26-3260-4551-8678-d8a0480b5a1d',
+  status: 'SUCCEEDED',
+  startDate: 2020-08-15T09:24:26.883Z,
+  stopDate: 2020-08-15T09:24:32.577Z,
+  input: '[{"n":2},{"n":3},{"n":4},{"n":5}]',
+  output: '[4,6,8,10]'
+}
+```
+![map](./docs/img/013.png)
+
+In above example, we didn't specify `MaxConcurrency`, which means use as much concurrrency as possible, iteration will start at the same time
+
+![map](./docs/img/014.png)
+
+We can specify which property in the input object we want to iterate
+
+In below code
+
+```yml
+            ItemsPath: $.inputs
+            Parameters:
+              n.$: $$.Map.Item.Value.n
+              executionId.$: $$.Execution.Id
+              groupId.$: $.groupId
+```
+
+`ItemsPath: $.inputs` means we want to iterate the `inputs` propety of the input object
+
+`n.$: $$.Map.Item.Value.n` means take the `n` propety from the ` Map.Item.Value` from `$$`, which is the execution context, and put into the $ object for iterator
+
+`executionId.$: $$.Execution.Id` means take the `Execution.Id` from the execution context, and put into the $ object for iterator
+
+`groupId.$: $.groupId` means take the `groupId` property from $ input object, and put into  the $ object for iterator
+
+We can test it with
+
+```
+sls invoke stepf --name mathStateMachine --data '{ "inputs": [{ "n": 1, "x": 100, "y": 100 }, { "n": 2, "x": 200, "y": 200 }, { "n": 3, "x": 300, "y": 300 }], "groupId": 42 }'
+```
+
+output
+
+```js
+{
+  executionArn: 'arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b',
+  stateMachineArn: 'arn:aws:states:ap-southeast-2:476287388771:stateMachine:mathStateMachine',
+  name: '5b9d71d5-afe1-41f5-b905-2978fd88217b',
+  status: 'SUCCEEDED',
+  startDate: 2020-08-15T10:24:05.262Z,
+  stopDate: 2020-08-15T10:24:10.406Z,
+  input: '{ "inputs": [{ "n": 1, "x": 100, "y": 100 }, { "n": 2, "x": 200, "y": 200 }, { "n": 3, "x": 300, "y": 300 }], "groupId": 42 }',
+  output: '[{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":1},{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":2},{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":3}]'
+}
+```
+
+
+```yml
+service:
+  name: cmp-guide-step-functions
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'ap-southeast-2'}
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+functions:
+  add:
+    handler: handler.add
+
+  double:
+    handler: handler.double
+
+  doubleBigNumber:
+    handler: handler.doubleBigNumber
+
+stepFunctions:
+  stateMachines:
+    mathStateMachine:
+      name: mathStateMachine
+      definition:
+        Comment: my math state machine
+        StartAt: myTaskMap
+        States:
+          myTaskMap:
+            Type: Map
+            ItemsPath: $.inputs
+            Parameters:
+              n.$: $$.Map.Item.Value.n
+              executionId.$: $$.Execution.Id
+              groupId.$: $.groupId
+            Iterator:
+              StartAt: Wait5Seconds
+              States:
+                Wait5Seconds:
+                  Type: Wait
+                  Seconds: 5
+                  End: true
+            End: true
+
+```
+
+![map](./docs/img/015.png)
