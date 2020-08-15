@@ -42,7 +42,7 @@ Consider to use it for below 3 scenarios
   "Type":"Task",
   "Resource":"<arn:resource>",
   "Next": "NextState",
-  "TimeoutSeconds": 300 // default value 60s, even if function has longer timeout, set this to match your functions timeout
+  "TimeoutSeconds": 300 # default value 60s, even if function has longer timeout, set this to match your functions timeout
 }
 ```
 
@@ -165,7 +165,7 @@ or you can specify how long to wait dynamically
 
 1. When the execution starts, you have to provide input, like {"x": 42, "y": 13}, then this input is bounded to the execution state, represented by **\$**. Later on if you want to access the value of 'x', you can do **\$.x**
 
-![Managing execution state](./docs/img/001.jpg)
+![Managing execution state](./docs/img/001.png)
 
 2. Because the condition is ($.x >= 42 and $.y < 42>), it will enter the "subtract" branch. here we can access the value from the `input` parameter. For the calculation result, we can save it to a "ResultPath", for example
 
@@ -174,11 +174,11 @@ or you can specify how long to wait dynamically
   "Type":"Task",
   "Resource":"arn:<resource>",
   "Next":"double",
-  "ResultPath":"$.n" //you can omit it, but the result will override the input
+  "ResultPath":"$.n" # you can omit it, but the result will override the input
 }
 ```
 
-![subtract](./docs/img/002.jpg)
+![subtract](./docs/img/002.png)
 In above image, the subtract value will be saved into `$.n`. So for the next state "double", the "input" parameter will be "{"x": 42, "y": 13, "n": 29}"
 
 3. For "double" state,
@@ -192,7 +192,7 @@ In above image, the subtract value will be saved into `$.n`. So for the next sta
 }
 ```
 
-![double](./docs/img/003.jpg)
+![double](./docs/img/003.png)
 
 Because we didn't specify `ResultPath`, the result will be saved to \$ root level, and "x", "y" and "n" are lost. So {"output": 58} becomes final output
 
@@ -211,8 +211,8 @@ A number of pre-defined error codes
 
 Custom error name CANNOT use prefix `States.`
 
-![retry](./docs/img/004.jpg)
+![retry](./docs/img/004.png)
 
 In above image, if we got 4 errors, ErrorA->ErrorB->ErrorC->ErrorB, then the first retrier will fail because it reaches its `MaxAttempts` first.
 
-![retry](./docs/img/005.jpg)
+![retry](./docs/img/005.png)
