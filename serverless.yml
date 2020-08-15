@@ -44,18 +44,16 @@ stepFunctions:
         States:
           myTaskMap:
             Type: Map
+            ItemsPath: $.inputs
+            Parameters:
+              n.$: $$.Map.Item.Value.n
+              executionId.$: $$.Execution.Id
+              groupId.$: $.groupId
             Iterator:
-              - StartAt: Wait5Seconds
-                States:
-                  - StartAt: Wait5Seconds
-                    States:
-                      Wait5Seconds:
-                        Type: Wait
-                        Seconds: 5
-                        Next: Double
-                      Double:
-                        Type: Task
-                        Resource:
-                          Fn::GetAtt: [double, Arn]
-                        End: true
+              StartAt: Wait5Seconds
+              States:
+                Wait5Seconds:
+                  Type: Wait
+                  Seconds: 5
+                  End: true
             End: true
