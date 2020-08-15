@@ -26,3 +26,7 @@ export const double = async (n: number): Promise<number> => {
 export const doubleBigNumber = async (n: number): Promise<number> => {
   return n * 10
 };
+
+export const print = async (event, _context): Promise<void> => {
+  console.log(JSON.stringify(event))
+}

@@ -216,3 +216,7 @@ Custom error name CANNOT use prefix `States.`
 In above image, if we got 4 errors, ErrorA->ErrorB->ErrorC->ErrorB, then the first retrier will fail because it reaches its `MaxAttempts` first.
 
 ![retry](./docs/img/005.png)
+
+
+#### 11. Express workflows
+Express workflows is the cut-down version of Standard Step Functions, there is no visual tools, no audit tool, but you still have log in CloudWatch.  And it is lot cheaper.

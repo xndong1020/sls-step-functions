@@ -25,6 +25,9 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 functions:
+  print:
+    handler: handler.print
+
   add:
     handler: handler.add
 
@@ -38,22 +41,27 @@ stepFunctions:
   stateMachines:
     mathStateMachine:
       name: mathStateMachine
+      events:
+        - cloudwatchEvent:
+            event:
+              source:
+                - aws.s3
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - s3.amazonaws.com
+                eventName:
+                  - PutObject
+                requestParameters:
+                  bucketName: 
+                    - test-serverless-stepf
       definition:
         Comment: my math state machine
-        StartAt: myTaskMap
+        StartAt: PrintEvent
         States:
-          myTaskMap:
-            Type: Map
-            ItemsPath: $.inputs
-            Parameters:
-              n.$: $$.Map.Item.Value.n
-              executionId.$: $$.Execution.Id
-              groupId.$: $.groupId
-            Iterator:
-              StartAt: Wait5Seconds
-              States:
-                Wait5Seconds:
-                  Type: Wait
-                  Seconds: 5
-                  End: true
+          PrintEvent:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [print, Arn]
             End: true
