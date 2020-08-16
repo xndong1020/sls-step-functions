@@ -1,3 +1,6 @@
+#### 28. SNS
+
+```yml
 service:
   name: cmp-guide-step-functions
 # app and org for use with dashboard.serverless.com
@@ -61,3 +64,6 @@ resources:
       Properties:
         DisplayName: my-topic
         TopicName: my-topic
+```
+
+Above code will create a topic `my-topic` in SNS, when you reference it, use `Ref: AlarmTopic` 
