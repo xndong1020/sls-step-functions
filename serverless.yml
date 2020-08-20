@@ -1,17 +1,6 @@
 service:
   name: cmp-guide-step-functions
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
 
-custom:
-  webpack:
-    webpackConfig: ./webpack.config.js
-    includeModules: 
-      forceExclude:
-        - aws-sdk
-
-# Add the serverless-webpack plugin
 plugins:
   - serverless-webpack
   - serverless-step-functions
@@ -27,14 +16,8 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 functions:
-  add:
-    handler: handler.add
-
-  double:
-    handler: handler.double
-
-  doubleBigNumber:
-    handler: handler.doubleBigNumber
+  handleSQS:
+    handler: handler.handleSQS
 
 stepFunctions:
   stateMachines:
@@ -42,22 +25,26 @@ stepFunctions:
       name: mathStateMachine
       definition:
         Comment: my math state machine
-        StartAt: SNSPublish
+        StartAt: SQSSendMessage
         States:
-          SNSPublish:
+          SQSSendMessage:
             Type: Task
-            Resource: arn:aws:states:::sns:publish
+            Resource: arn:aws:states:::sqs:sendMessage
             Parameters:
-              Message.$: $ # take input object, and pass it to messge context
-              TopicArn:
-                Ref: AlarmTopic
+              QueueUrl: 
+                Ref: MyQueue
+              MessageBody.$: $ # take input object, and pass it to messge context
+            Next: HandleSQS
+          HandleSQS:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: ['handleSQS', 'Arn']
             End: true
 
 
 resources:
   Resources:
-    AlarmTopic:
-      Type: AWS::SNS::Topic
+    MyQueue:
+      Type: AWS::SQS::Queue
       Properties:
-        DisplayName: my-topic
-        TopicName: my-topic
+        QueueName: my-queue
