@@ -25,26 +25,51 @@ stepFunctions:
       name: mathStateMachine
       definition:
         Comment: my math state machine
-        StartAt: SQSSendMessage
+        StartAt: PutDynamoDBItem
         States:
-          SQSSendMessage:
+          PutDynamoDBItem:
             Type: Task
-            Resource: arn:aws:states:::sqs:sendMessage
+            Resource: arn:aws:states:::dynamodb:putItem
+            ResultPath: $.response
             Parameters:
-              QueueUrl: 
-                Ref: MyQueue
-              MessageBody.$: $ # take input object, and pass it to messge context
-            Next: HandleSQS
-          HandleSQS:
-            Type: Task
-            Resource: 
-              Fn::GetAtt: ['handleSQS', 'Arn']
+              TableName: 
+                Ref: MyDynamoDBTable1
+              Item.$: $.item # take input object, and pass it to messge context
             End: true
+          #   Next: SetNameForQuery
+          # SetNameForQuery:
+          #   Type: Pass
+          #   Result:
+          #     id: 
+          #       S: Jeremy
+          #   Next: GetDynamoDBItem
+          # GetDynamoDBItem:
+          #   Type: Task
+          #   Resource: arn:aws:states:::dynamodb:getItem
+          #   Parameters:
+          #     TableName: 
+          #       Ref: MyDynamoDBTable1
+          #     Key.$: $ # now it is 'name' provided by SetNameForQuery
+          #   End: true
+          
 
 
 resources:
   Resources:
-    MyQueue:
-      Type: AWS::SQS::Queue
+    MyDynamoDBTable1:
+      Type: AWS::DynamoDB::Table
       Properties:
-        QueueName: my-queue
+        TableName: MyDynamoDBTable1
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: score
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: score
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
