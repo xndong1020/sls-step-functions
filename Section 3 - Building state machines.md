@@ -701,8 +701,8 @@ Output
 
 ```js
 {
-  executionArn: 'arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:f8007c26-3260-4551-8678-d8a0480b5a1d',
-  stateMachineArn: 'arn:aws:states:ap-southeast-2:476287388771:stateMachine:mathStateMachine',
+  executionArn: 'arn:aws:states:ap-southeast-2:4762873XXX71:execution:mathStateMachine:f8007c26-3260-4551-8678-d8a0480b5a1d',
+  stateMachineArn: 'arn:aws:states:ap-southeast-2:4762873XXX71:stateMachine:mathStateMachine',
   name: 'f8007c26-3260-4551-8678-d8a0480b5a1d',
   status: 'SUCCEEDED',
   startDate: 2020-08-15T09:24:26.883Z,
@@ -747,14 +747,14 @@ output
 
 ```js
 {
-  executionArn: 'arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b',
-  stateMachineArn: 'arn:aws:states:ap-southeast-2:476287388771:stateMachine:mathStateMachine',
+  executionArn: 'arn:aws:states:ap-southeast-2:4762873XXX71:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b',
+  stateMachineArn: 'arn:aws:states:ap-southeast-2:4762873XXX71:stateMachine:mathStateMachine',
   name: '5b9d71d5-afe1-41f5-b905-2978fd88217b',
   status: 'SUCCEEDED',
   startDate: 2020-08-15T10:24:05.262Z,
   stopDate: 2020-08-15T10:24:10.406Z,
   input: '{ "inputs": [{ "n": 1, "x": 100, "y": 100 }, { "n": 2, "x": 200, "y": 200 }, { "n": 3, "x": 300, "y": 300 }], "groupId": 42 }',
-  output: '[{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":1},{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":2},{"executionId":"arn:aws:states:ap-southeast-2:476287388771:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":3}]'
+  output: '[{"executionId":"arn:aws:states:ap-southeast-2:4762873XXX71:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":1},{"executionId":"arn:aws:states:ap-southeast-2:4762873XXX71:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":2},{"executionId":"arn:aws:states:ap-southeast-2:4762873XXX71:execution:mathStateMachine:5b9d71d5-afe1-41f5-b905-2978fd88217b","groupId":42,"n":3}]'
 }
 ```
 

@@ -2,7 +2,6 @@ service:
   name: cmp-guide-step-functions
 
 plugins:
-  - serverless-webpack
   - serverless-step-functions
 
 provider:
@@ -10,66 +9,86 @@ provider:
   runtime: nodejs12.x
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'ap-southeast-2'}
-  apiGateway:
-    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
-  environment:
-    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+  iamRoleStatements:
+    - Effect: Allow
+      Action: states:SendTaskSuccess
+      Resource: '*'
 
 functions:
-  handleSQS:
-    handler: handler.handleSQS
+  sqs:
+    handler: handler.sqs
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [MyQueue, Arn]
+          batchSize: 1
+
+  lambda:
+    handler: handler.lambda
+
+  sns:
+    handler: handler.sns
+    events:
+      - sns:
+          arn:
+            Ref: MyTopic
+          topicName: callback-topic
 
 stepFunctions:
+  validate: true
   stateMachines:
-    mathStateMachine:
-      name: mathStateMachine
+    callbackExample:      
+      name: callback-example
       definition:
-        Comment: my math state machine
-        StartAt: PutDynamoDBItem
+        Comment: Demonstrate how the use callbacks by sending Token
+        StartAt: Publish SQS message
         States:
-          PutDynamoDBItem:
+          Publish SQS message:
             Type: Task
-            Resource: arn:aws:states:::dynamodb:putItem
-            ResultPath: $.response
+            Resource: arn:aws:states:::sqs:sendMessage.waitForTaskToken
             Parameters:
-              TableName: 
-                Ref: MyDynamoDBTable1
-              Item.$: $.item # take input object, and pass it to messge context
+              QueueUrl:
+                Ref: MyQueue
+              MessageBody:
+                StateMachineId.$: $$.StateMachine.Id
+                ExecutionId.$: $$.Execution.Id
+                StateName.$: $$.State.Name
+                Token.$: $$.Task.Token
+            Next: Invoke Lambda
+          Invoke Lambda:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke.waitForTaskToken
+            Parameters:
+              FunctionName:
+                Ref: lambda
+              Payload:
+                StateMachineId.$: $$.StateMachine.Id
+                ExecutionId.$: $$.Execution.Id
+                StateName.$: $$.State.Name
+                Token.$: $$.Task.Token
+            Next: Publish SNS message
+          Publish SNS message:
+            Type: Task
+            Resource: arn:aws:states:::sns:publish.waitForTaskToken
+            Parameters:
+              TopicArn:
+                Ref: MyTopic
+              Message:
+                StateMachineId.$: $$.StateMachine.Id
+                ExecutionId.$: $$.Execution.Id
+                StateName.$: $$.State.Name
+                Token.$: $$.Task.Token
             End: true
-          #   Next: SetNameForQuery
-          # SetNameForQuery:
-          #   Type: Pass
-          #   Result:
-          #     id: 
-          #       S: Jeremy
-          #   Next: GetDynamoDBItem
-          # GetDynamoDBItem:
-          #   Type: Task
-          #   Resource: arn:aws:states:::dynamodb:getItem
-          #   Parameters:
-          #     TableName: 
-          #       Ref: MyDynamoDBTable1
-          #     Key.$: $ # now it is 'name' provided by SetNameForQuery
-          #   End: true
-          
-
 
 resources:
   Resources:
-    MyDynamoDBTable1:
-      Type: AWS::DynamoDB::Table
+    MyQueue:
+      Type: AWS::SQS::Queue
       Properties:
-        TableName: MyDynamoDBTable1
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          - AttributeName: score
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-          - AttributeName: score
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        QueueName: my-queue
+
+    MyTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: callback-topic
+        TopicName: callback-topic
