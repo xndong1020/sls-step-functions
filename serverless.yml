@@ -2,6 +2,7 @@ service:
   name: cmp-guide-step-functions
 
 plugins:
+  - serverless-webpack
   - serverless-step-functions
 
 provider:
@@ -9,86 +10,65 @@ provider:
   runtime: nodejs12.x
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'ap-southeast-2'}
-  iamRoleStatements:
-    - Effect: Allow
-      Action: states:SendTaskSuccess
-      Resource: '*'
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 functions:
   sqs:
     handler: handler.sqs
-    events:
-      - sqs:
-          arn:
-            Fn::GetAtt: [MyQueue, Arn]
-          batchSize: 1
-
-  lambda:
-    handler: handler.lambda
-
-  sns:
-    handler: handler.sns
-    events:
-      - sns:
-          arn:
-            Ref: MyTopic
-          topicName: callback-topic
 
 stepFunctions:
-  validate: true
   stateMachines:
-    callbackExample:      
-      name: callback-example
+    mathStateMachine:
+      name: mathStateMachine
       definition:
-        Comment: Demonstrate how the use callbacks by sending Token
-        StartAt: Publish SQS message
+        Comment: my math state machine
+        StartAt: PutDynamoDBItem
         States:
-          Publish SQS message:
+          PutDynamoDBItem:
             Type: Task
-            Resource: arn:aws:states:::sqs:sendMessage.waitForTaskToken
+            Resource: arn:aws:states:::dynamodb:putItem
+            ResultPath: $.response
             Parameters:
-              QueueUrl:
-                Ref: MyQueue
-              MessageBody:
-                StateMachineId.$: $$.StateMachine.Id
-                ExecutionId.$: $$.Execution.Id
-                StateName.$: $$.State.Name
-                Token.$: $$.Task.Token
-            Next: Invoke Lambda
-          Invoke Lambda:
+              TableName: 
+                Ref: MyDynamoDBTable1
+              Item.$: $.item # take input object, and pass it to messge context
+            Next: SetNameForQuery
+          SetNameForQuery:
+            Type: Pass
+            Result:
+              id: Jeremy
+              score: "42"
+            Next: GetDynamoDBItem
+          GetDynamoDBItem:
             Type: Task
-            Resource: arn:aws:states:::lambda:invoke.waitForTaskToken
+            Resource: arn:aws:states:::dynamodb:getItem
             Parameters:
-              FunctionName:
-                Ref: lambda
-              Payload:
-                StateMachineId.$: $$.StateMachine.Id
-                ExecutionId.$: $$.Execution.Id
-                StateName.$: $$.State.Name
-                Token.$: $$.Task.Token
-            Next: Publish SNS message
-          Publish SNS message:
-            Type: Task
-            Resource: arn:aws:states:::sns:publish.waitForTaskToken
-            Parameters:
-              TopicArn:
-                Ref: MyTopic
-              Message:
-                StateMachineId.$: $$.StateMachine.Id
-                ExecutionId.$: $$.Execution.Id
-                StateName.$: $$.State.Name
-                Token.$: $$.Task.Token
+              TableName: 
+                Ref: MyDynamoDBTable1
+              Key.$: $ # now Key is { "id":"Jeremy", "score":"42" } provided by SetNameForQuery
             End: true
+          
+
 
 resources:
   Resources:
-    MyQueue:
-      Type: AWS::SQS::Queue
+    MyDynamoDBTable1:
+      Type: AWS::DynamoDB::Table
       Properties:
-        QueueName: my-queue
-
-    MyTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        DisplayName: callback-topic
-        TopicName: callback-topic
+        TableName: MyDynamoDBTable1
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: score
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: score
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

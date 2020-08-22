@@ -149,8 +149,8 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
 functions:
-  handleSQS:
-    handler: handler.handleSQS
+  sqs:
+    handler: handler.sqs
 
 stepFunctions:
   stateMachines:
@@ -168,22 +168,21 @@ stepFunctions:
               TableName: 
                 Ref: MyDynamoDBTable1
               Item.$: $.item # take input object, and pass it to messge context
+            Next: SetNameForQuery
+          SetNameForQuery:
+            Type: Pass
+            Result:
+              id: Jeremy
+              score: "42"
+            Next: GetDynamoDBItem
+          GetDynamoDBItem:
+            Type: Task
+            Resource: arn:aws:states:::dynamodb:getItem
+            Parameters:
+              TableName: 
+                Ref: MyDynamoDBTable1
+              Key.$: $ # now Key is { "id":"Jeremy", "score":"42" } provided by SetNameForQuery
             End: true
-          #   Next: SetNameForQuery
-          # SetNameForQuery:
-          #   Type: Pass
-          #   Result:
-          #     id: 
-          #       S: Jeremy
-          #   Next: GetDynamoDBItem
-          # GetDynamoDBItem:
-          #   Type: Task
-          #   Resource: arn:aws:states:::dynamodb:getItem
-          #   Parameters:
-          #     TableName: 
-          #       Ref: MyDynamoDBTable1
-          #     Key.$: $ # now it is 'name' provided by SetNameForQuery
-          #   End: true
           
 
 
@@ -207,7 +206,20 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 ```
-Note:
-For some reason `GetDynamoDBItem` not working
+
+To invoke, use 
+```
+sls invoke stepf --name mathStateMachine --data '{"item":{"id":"Jeremy","score":"42"}}'
+```
+
+And result will be something like:
+
+```json
+{
+  ...
+  input: '{"item":{"id":"Jeremy","score":"42"}}',
+  output: '{"id":"Jeremy","score":"42","Item":{"Item":{"score":{"S":"42"},"id":{"S":"Jeremy"}},"SdkHttpMetadata":...}'
+}
+```
 
 
